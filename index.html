@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>Qunit</title>
+	<link type="text/css" rel="stylesheet" media="all" href="css/qunit.css" />
+	<script type="text/javascript" src="js/jquery-1.6.4.min.js"></script>
+	<script type="text/javascript" src="js/qunit.js"></script>
+	<script type="text/javascript" src="js/jquery.mockjax.js"></script>
+</head>
+<body>
+	<h1 id="qunit-header">QUnit example</h1>
+	<h2 id="qunit-banner"></h2>
+	<div id="qunit-testrunner-toolbar"></div>
+	<h2 id="qunit-userAgent"></h2>
+	<ol id="qunit-tests"></ol>
+	<div id="qunit-fixture">test markup, will be hidden</div>
+	
+	<div class="test"></div>
+	<a href="#a" id="click"></a>
+	
+	<script type="text/javascript">
+	
+	// --------------------------- Essas são as funções do meu sistema 
+	
+	$('#click').click(function(){
+		$('div.test').hide();
+		return false;
+	});
+	
+	function preencheTexto(selector, text){
+		selector.html(text);
+	}
+	
+	function pegaJson(){		
+		$.ajax({
+			url : '/test/inline',
+			dataType : 'json',
+			async: false,
+			success : function(data) {
+				json = data;
+			}
+		});
+		return json;
+	}
+	
+	function pegaAjax(){		
+		$.ajax({
+			url : '/test/status',
+			async: false,
+			error : function(data) {
+				$('body').append('<div class="error">Erro</div>');
+			}
+		});
+	}
+	
+	// --------------------------- Iniciando código de testes 
+	
+	module("effects");
+	test("deveEstarVisivel", function(){
+		var div = $('.test');
+		ok((div.is(':visible')), "vamos verificar se a div.test esta realmente visivel");
+		equal(false, div.is(':hidden'), "vamos verificar se a div não esta escondida");
+	});
+	
+	test("deveEsconderADivAoClicarNela", function(){
+		$("#click").trigger("click");
+		
+		ok(($('div.test:hidden').length==1), "vamos verificar se a div.test ficou escondida depois do click");
+		notEqual($('.test').css("display"),"block", "vamos verificar se a div.test ficou com css display none");
+	});
+	
+	test("devePreencherUmDOM", function(){
+		var p = $("<p>").addClass('dom');
+		preencheTexto(p, "mockando um DOM");
+		
+		equal(p.html(),"mockando um DOM", "vamos verificar se o html esta igual ao passado");
+	});
+	
+	module("ajax");
+	$.mockjax({
+		url: '/test/inline',
+		dataType: 'json',
+		responseTime: 2500,
+		responseText: {
+			say: 'Hello world!'
+		}
+	});
+	
+	$.mockjax({
+		url: '/test/status',
+		status: 500
+	});
+	
+	test("deveRetornarPegarPegandoDeAjaxUmJSON", function() {
+		var json = pegaJson();
+
+		stop();
+		start();
+
+		equal(json.say,'Hello world!', "vamos verificar se o pegaJson esta funcionando");
+	});
+	
+	test("deveRetornarUmaMensagemDeErro", function() {
+		expect(3);
+		pegaAjax();
+
+		stop();
+		start();
+
+		var divErro = $("div.error");
+		
+		ok((divErro.length!=0), "vamos ver se foi criado a div que contem a mensagem de erro");
+		ok((divErro.html()!=""), "vamos verificar se tem uma mensagem de erro");
+		ok((divErro.is(":visible")), "vamos verificar se tem esta visivel");
+	});
+	</script>
+</body>
+</html>
